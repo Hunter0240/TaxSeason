@@ -15,64 +15,51 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Divider
+  Divider,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
-import axios from 'axios';
-
-interface Wallet {
-  _id: string;
-  address: string;
-  label: string;
-  network: string;
-  createdAt: string;
-}
+import walletService, { Wallet, NewWallet } from '../services/walletService';
 
 const WalletsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [newWallet, setNewWallet] = useState({
+  const [newWallet, setNewWallet] = useState<NewWallet>({
     address: '',
     label: '',
   });
+  const [alert, setAlert] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   useEffect(() => {
-    // Simulate loading data
-    setTimeout(() => {
-      setLoading(false);
-      // Mock data
-      setWallets([
-        {
-          _id: '1',
-          address: '0x1234567890123456789012345678901234567890',
-          label: 'Main Wallet',
-          network: 'arbitrum-one',
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: '2',
-          address: '0x0987654321098765432109876543210987654321',
-          label: 'Trading Wallet',
-          network: 'arbitrum-one',
-          createdAt: new Date().toISOString()
-        }
-      ]);
-    }, 1000);
-    
-    // In the future, we can fetch real data:
-    // const fetchWallets = async () => {
-    //   try {
-    //     const response = await axios.get('http://localhost:4000/api/wallets');
-    //     setWallets(response.data);
-    //     setLoading(false);
-    //   } catch (error) {
-    //     console.error('Error fetching wallets:', error);
-    //     setLoading(false);
-    //   }
-    // };
-    // fetchWallets();
+    fetchWallets();
   }, []);
+
+  const fetchWallets = async () => {
+    setLoading(true);
+    try {
+      const walletData = await walletService.getAllWallets();
+      setWallets(walletData);
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+      setAlert({
+        open: true,
+        message: 'Failed to fetch wallets. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddWallet = () => {
     // Reset form and open dialog
@@ -84,59 +71,66 @@ const WalletsPage: React.FC = () => {
     setOpenDialog(false);
   };
 
-  const handleSubmitWallet = () => {
+  const handleSubmitWallet = async () => {
     // Validate input
     if (!newWallet.address || !newWallet.label) {
+      setAlert({
+        open: true,
+        message: 'Address and label are required',
+        severity: 'warning'
+      });
       return;
     }
 
-    // Mock adding a wallet
-    const mockWallet: Wallet = {
-      _id: Date.now().toString(),
-      address: newWallet.address,
-      label: newWallet.label,
-      network: 'arbitrum-one',
-      createdAt: new Date().toISOString()
-    };
-
-    setWallets([...wallets, mockWallet]);
-    setOpenDialog(false);
-
-    // In a real app, we would call the API:
-    // const addWallet = async () => {
-    //   try {
-    //     const response = await axios.post('http://localhost:4000/api/wallets', {
-    //       address: newWallet.address,
-    //       label: newWallet.label,
-    //       network: 'arbitrum-one'
-    //     });
-    //     setWallets([...wallets, response.data]);
-    //     setOpenDialog(false);
-    //   } catch (error) {
-    //     console.error('Error adding wallet:', error);
-    //   }
-    // };
-    // addWallet();
+    try {
+      const addedWallet = await walletService.addWallet({
+        address: newWallet.address,
+        label: newWallet.label,
+        network: 'arbitrum-one'
+      });
+      
+      setWallets([...wallets, addedWallet]);
+      setOpenDialog(false);
+      setAlert({
+        open: true,
+        message: 'Wallet added successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error adding wallet:', error);
+      setAlert({
+        open: true,
+        message: 'Failed to add wallet. Please try again.',
+        severity: 'error'
+      });
+    }
   };
 
-  const handleDeleteWallet = (id: string) => {
-    // Mock deleting a wallet
-    setWallets(wallets.filter(wallet => wallet._id !== id));
-
-    // In a real app, we would call the API:
-    // const deleteWallet = async (id: string) => {
-    //   try {
-    //     await axios.delete(`http://localhost:4000/api/wallets/${id}`);
-    //     setWallets(wallets.filter(wallet => wallet._id !== id));
-    //   } catch (error) {
-    //     console.error('Error deleting wallet:', error);
-    //   }
-    // };
-    // deleteWallet(id);
+  const handleDeleteWallet = async (id: string) => {
+    try {
+      await walletService.deleteWallet(id);
+      setWallets(wallets.filter(wallet => wallet._id !== id));
+      setAlert({
+        open: true,
+        message: 'Wallet deleted successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error deleting wallet:', error);
+      setAlert({
+        open: true,
+        message: 'Failed to delete wallet. Please try again.',
+        severity: 'error'
+      });
+    }
   };
 
   const truncateAddress = (address: string): string => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+  const handleCloseAlert = () => {
+    setAlert(prev => ({ ...prev, open: false }));
   };
 
   if (loading) {
@@ -244,6 +238,22 @@ const WalletsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Alert Snackbar */}
+      <Snackbar 
+        open={alert.open} 
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseAlert} 
+          severity={alert.severity}
+          sx={{ width: '100%' }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
