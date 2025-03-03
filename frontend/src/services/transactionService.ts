@@ -6,10 +6,12 @@ const generateMockTransactions = (count: number = 10): Transaction[] => {
   const blockchains = ['Arbitrum One', 'Ethereum', 'Polygon'];
   const types = ['send', 'receive', 'swap', 'other'];
   const statuses = ['completed', 'pending', 'failed'];
+  const categories = ['income', 'expense', 'trade', 'transfer', 'fee', 'uncategorized'];
   
   return Array.from({ length: count }, (_, i) => {
     const type = types[Math.floor(Math.random() * types.length)] as 'send' | 'receive' | 'swap' | 'other';
     const status = statuses[Math.floor(Math.random() * statuses.length)] as 'completed' | 'pending' | 'failed';
+    const category = categories[Math.floor(Math.random() * categories.length)];
     const value = Math.random() * 1000;
     const fee = Math.random() * 10;
     const from = `0x${Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
@@ -29,6 +31,7 @@ const generateMockTransactions = (count: number = 10): Transaction[] => {
       status,
       type,
       fee,
+      category,
       notes: Math.random() > 0.7 ? `Sample note for transaction ${i + 1}` : undefined
     };
   });

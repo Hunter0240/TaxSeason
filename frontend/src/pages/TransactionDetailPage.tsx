@@ -29,6 +29,7 @@ import {
 import { format } from 'date-fns';
 import transactionService from '../services/transactionService';
 import { Transaction } from '../types/api';
+import CategorySelector from '../components/Transaction/CategorySelector';
 
 const TransactionDetailPage: React.FC = () => {
   const { transactionId } = useParams<{ transactionId: string }>();
@@ -311,6 +312,16 @@ const TransactionDetailPage: React.FC = () => {
             <Typography variant="body1">
               ${transaction.fee ? transaction.fee.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
             </Typography>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="textSecondary">
+              Category
+            </Typography>
+            <CategorySelector 
+              transaction={transaction} 
+              onCategoryChange={(updatedTransaction) => setTransaction(updatedTransaction)} 
+            />
           </Grid>
         </Grid>
         

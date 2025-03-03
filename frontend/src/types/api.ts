@@ -49,6 +49,7 @@ export interface Transaction {
   to: string;
   status: 'completed' | 'pending' | 'failed';
   type: 'send' | 'receive' | 'swap' | 'other';
+  category?: 'income' | 'expense' | 'trade' | 'transfer' | 'fee' | 'uncategorized';
   fee?: number;
   notes?: string;
 }

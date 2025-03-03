@@ -45,6 +45,9 @@ const transactionStatuses = ['all', 'completed', 'pending', 'failed'];
 // Available blockchains
 const blockchains = ['all', 'Arbitrum One', 'Ethereum', 'Polygon'];
 
+// Available categories
+const categories = ['all', 'income', 'expense', 'trade', 'transfer', 'fee', 'uncategorized'];
+
 const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -57,6 +60,7 @@ const TransactionsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [blockchainFilter, setBlockchainFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   
   // Pagination
   const [page, setPage] = useState(0);
@@ -111,9 +115,14 @@ const TransactionsPage: React.FC = () => {
       result = result.filter(tx => tx.blockchain === blockchainFilter);
     }
     
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      result = result.filter(tx => tx.category === categoryFilter);
+    }
+    
     setFilteredTransactions(result);
     setPage(0); // Reset to first page when filters change
-  }, [searchTerm, typeFilter, statusFilter, blockchainFilter, transactions]);
+  }, [searchTerm, typeFilter, statusFilter, blockchainFilter, categoryFilter, transactions]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -142,6 +151,10 @@ const TransactionsPage: React.FC = () => {
 
   const handleBlockchainFilterChange = (event: SelectChangeEvent) => {
     setBlockchainFilter(event.target.value);
+  };
+
+  const handleCategoryFilterChange = (event: SelectChangeEvent) => {
+    setCategoryFilter(event.target.value);
   };
 
   const getTransactionTypeIcon = (type: string) => {
@@ -223,7 +236,7 @@ const TransactionsPage: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={4} md={2.6}>
+              <Grid item xs={12} sm={4} md={1.6}>
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Type</InputLabel>
                   <Select
@@ -239,7 +252,7 @@ const TransactionsPage: React.FC = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={4} md={2.6}>
+              <Grid item xs={12} sm={4} md={1.6}>
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Status</InputLabel>
                   <Select
@@ -255,7 +268,7 @@ const TransactionsPage: React.FC = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={4} md={2.8}>
+              <Grid item xs={12} sm={4} md={1.6}>
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Blockchain</InputLabel>
                   <Select
@@ -266,6 +279,22 @@ const TransactionsPage: React.FC = () => {
                     {blockchains.map(blockchain => (
                       <MenuItem key={blockchain} value={blockchain}>
                         {blockchain === 'all' ? 'All Blockchains' : blockchain}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={4} md={1.6}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={categoryFilter}
+                    onChange={handleCategoryFilterChange}
+                    label="Category"
+                  >
+                    {categories.map(category => (
+                      <MenuItem key={category} value={category} sx={{ textTransform: 'capitalize' }}>
+                        {category === 'all' ? 'All Categories' : category}
                       </MenuItem>
                     ))}
                   </Select>
@@ -284,6 +313,7 @@ const TransactionsPage: React.FC = () => {
                     <TableCell>From/To</TableCell>
                     <TableCell>Value</TableCell>
                     <TableCell>Blockchain</TableCell>
+                    <TableCell>Category</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
@@ -329,6 +359,20 @@ const TransactionsPage: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             {transaction.blockchain}
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ 
+                              textTransform: 'capitalize',
+                              color: transaction.category ? 
+                                transaction.category === 'income' ? '#00A389' :
+                                transaction.category === 'expense' ? '#FF4842' :
+                                transaction.category === 'trade' ? '#7635dc' :
+                                transaction.category === 'transfer' ? '#2196F3' :
+                                transaction.category === 'fee' ? '#FFC107' : '#919EAB'
+                              : '#919EAB'
+                            }}>
+                              {transaction.category || 'uncategorized'}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Chip 
