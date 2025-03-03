@@ -17,11 +17,11 @@ import {
   Menu as MenuIcon, 
   Dashboard as DashboardIcon, 
   AccountBalanceWallet as WalletIcon, 
-  SwapHoriz as TransactionIcon, 
-  Receipt as TaxReportIcon, 
+  SwapHoriz as TransactionIcon,
+  ReceiptLong as TaxReportIcon,
   Settings as SettingsIcon 
 } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
 
@@ -33,6 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -61,8 +62,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             component={RouterLink} 
             to={item.path}
             onClick={isMobile ? handleDrawerToggle : undefined}
+            selected={location.pathname === item.path}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(144, 202, 249, 0.08)',
+              },
+              '&.Mui-selected:hover': {
+                backgroundColor: 'rgba(144, 202, 249, 0.12)',
+              }
+            }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit' }}>
               {item.icon}
             </ListItemIcon>
             <ListItemText primary={item.text} />
