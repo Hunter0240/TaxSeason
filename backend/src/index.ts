@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 
 // Import routes
 import walletRoutes from './routes/walletRoutes';
+import transactionRoutes from './routes/transactionRoutes';
+import taxRoutes from './routes/taxRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -34,9 +36,9 @@ app.get('/', (req: Request, res: Response) => {
 
 // API routes
 app.use('/api/wallets', walletRoutes);
+app.use('/api', transactionRoutes);
+app.use('/api', taxRoutes);
 // Add other routes as they are developed
-// app.use('/api/transactions', transactionRoutes);
-// app.use('/api/tax-calculations', taxCalculationRoutes);
 // app.use('/api/export', exportRoutes);
 
 // Start server

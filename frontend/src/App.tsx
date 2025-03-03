@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import WalletsPage from './pages/WalletsPage';
 import TransactionsPage from './pages/TransactionsPage';
 import TransactionDetailPage from './pages/TransactionDetailPage';
+import TaxReportPage from './pages/TaxReportPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -67,6 +68,7 @@ const App: React.FC = () => {
             <Route path="/wallets" element={<WalletsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/transactions/:transactionId" element={<TransactionDetailPage />} />
+            <Route path="/tax-report" element={<TaxReportPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

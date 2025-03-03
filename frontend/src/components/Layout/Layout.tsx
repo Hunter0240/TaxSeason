@@ -17,7 +17,8 @@ import {
   Menu as MenuIcon, 
   Dashboard as DashboardIcon, 
   AccountBalanceWallet as WalletIcon, 
-  SwapHoriz as TransactionIcon, 
+  SwapHoriz as TransactionIcon,
+  ReceiptLong as TaxReportIcon,
   Settings as SettingsIcon 
 } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
@@ -42,6 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Wallets', icon: <WalletIcon />, path: '/wallets' },
     { text: 'Transactions', icon: <TransactionIcon />, path: '/transactions' },
+    { text: 'Tax Report', icon: <TaxReportIcon />, path: '/tax-report' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
