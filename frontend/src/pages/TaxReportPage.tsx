@@ -45,6 +45,7 @@ import taxReportService, {
 } from '../services/taxReportService';
 import walletService from '../services/walletService';
 import { Wallet } from '../types/api';
+import ExportOptions from '../components/Transaction/ExportOptions';
 import {
   BarChart,
   Bar,
@@ -256,20 +257,32 @@ const TaxReportPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Mock ID for now since we don't have a real report ID
-      const pdfBlob = await taxReportService.downloadTaxReportPdf('mock-report-id');
+      // In a real application, we would use the first wallet ID from reportParams.walletAddresses
+      // For now, we'll use a mock ID
+      const mockWalletId = "6402a8a6a65a4b7b3d9c1234"; // Just a mock MongoDB ID
+      
+      const pdfBlob = await taxReportService.downloadTaxReportPdf(
+        mockWalletId, 
+        reportParams
+      );
       
       // Create a download link
       const url = window.URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tax-report-${reportParams.year}-${reportParams.country}.pdf`;
+      
+      // Use a more descriptive filename
+      const methodString = reportParams.costBasisMethod || 'FIFO';
+      a.download = `tax-report-${reportParams.year}-${reportParams.country}-${methodString}.pdf`;
+      
       document.body.appendChild(a);
       a.click();
       
       // Clean up
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      
+      setSuccessMessage('PDF export completed successfully.');
     } catch (error) {
       console.error('Error downloading PDF:', error);
       setError('Failed to download PDF. Please try again later.');
@@ -279,7 +292,7 @@ const TaxReportPage: React.FC = () => {
   };
 
   // Download tax report as CSV
-  const handleDownloadCsv = async () => {
+  const handleDownloadCsv = async (templateId: string = 'general') => {
     if (!taxReport) return;
     
     try {
@@ -287,19 +300,21 @@ const TaxReportPage: React.FC = () => {
       setError(null);
       
       // Mock ID for now since we don't have a real report ID
-      const csvBlob = await taxReportService.downloadTaxReportCsv('mock-report-id');
+      const csvBlob = await taxReportService.downloadTaxReportCsv('mock-report-id', templateId);
       
       // Create a download link
       const url = window.URL.createObjectURL(csvBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tax-report-${reportParams.year}-${reportParams.country}.csv`;
+      a.download = `tax-report-${reportParams.year}-${reportParams.country}-${templateId}.csv`;
       document.body.appendChild(a);
       a.click();
       
       // Clean up
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      
+      setSuccessMessage(`CSV export in ${templateId} format completed successfully.`);
     } catch (error) {
       console.error('Error downloading CSV:', error);
       setError('Failed to download CSV. Please try again later.');
@@ -473,348 +488,352 @@ const TaxReportPage: React.FC = () => {
 
       {/* Tax Report Results */}
       {taxReport && (
-        <Paper elevation={3} sx={{ mb: 4 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="tax report tabs">
-              <Tab label="Summary" {...a11yProps(0)} />
-              <Tab label="Breakdown by Category" {...a11yProps(1)} />
-              <Tab label="Monthly Analysis" {...a11yProps(2)} />
-              <Tab label="Transactions" {...a11yProps(3)} />
-            </Tabs>
-          </Box>
-
-          {/* Report Actions */}
-          <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #eee' }}>
-            <Tooltip title="Download as PDF">
-              <IconButton onClick={handleDownloadPdf} disabled={loading}>
-                <PdfIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Download as CSV">
-              <IconButton onClick={handleDownloadCsv} disabled={loading}>
-                <CsvIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Save Report">
-              <IconButton onClick={handleSaveReport} disabled={loading}>
-                <SaveIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
-
-          {/* Summary Tab */}
-          <TabPanel value={tabValue} index={0}>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Tax Summary
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" gutterBottom>
-                      Generated on {format(new Date(taxReport.summary.generatedDate), 'PPpp')}
-                    </Typography>
-                    
-                    <Box sx={{ mt: 3 }}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Tax Year
-                          </Typography>
-                          <Typography variant="body1">
-                            {taxReport.summary.taxYear}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Country
-                          </Typography>
-                          <Typography variant="body1">
-                            {taxReport.summary.country}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Total Income
-                          </Typography>
-                          <Typography variant="body1" color="#00A389">
-                            {formatCurrency(taxReport.summary.totalIncome)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Total Expenses
-                          </Typography>
-                          <Typography variant="body1" color="#FF4842">
-                            {formatCurrency(taxReport.summary.totalExpenses)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Total Gains
-                          </Typography>
-                          <Typography variant="body1" color="#00A389">
-                            {formatCurrency(taxReport.summary.totalGains)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Total Losses
-                          </Typography>
-                          <Typography variant="body1" color="#FF4842">
-                            {formatCurrency(taxReport.summary.totalLosses)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Divider sx={{ my: 2 }} />
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            Net Taxable Amount
-                          </Typography>
-                          <Typography 
-                            variant="h5" 
-                            color={taxReport.summary.netTaxableAmount >= 0 ? '#00A389' : '#FF4842'}
-                          >
-                            {formatCurrency(taxReport.summary.netTaxableAmount)}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Category Distribution
-                    </Typography>
-                    <Box sx={{ height: 300 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={taxReport.categoryBreakdown}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="amount"
-                            nameKey="category"
-                            label={({ category, percentage }) => `${category}: ${percentage.toFixed(0)}%`}
-                          >
-                            {taxReport.categoryBreakdown.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </TabPanel>
-
-          {/* Breakdown by Category Tab */}
-          <TabPanel value={tabValue} index={1}>
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" gutterBottom>
-                Transaction Volume by Category
-              </Typography>
-              <Box sx={{ height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={taxReport.categoryBreakdown}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="category" />
-                    <YAxis />
-                    <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend />
-                    <Bar
-                      dataKey="amount"
-                      name="Amount"
-                      fill="#8884d8"
-                    >
-                      {taxReport.categoryBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
+        <>
+          <Paper elevation={3} sx={{ mb: 4 }}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>Export Options</Typography>
+              <ExportOptions
+                onExportCsv={handleDownloadCsv}
+                onExportPdf={handleDownloadPdf}
+                loading={loading}
+                disabled={!taxReport}
+                reportParams={reportParams}
+              />
             </Box>
-            
-            <Typography variant="h6" gutterBottom>
-              Category Details
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Category</TableCell>
-                    <TableCell align="right">Amount</TableCell>
-                    <TableCell align="right">Percentage</TableCell>
-                    <TableCell align="right">Transaction Count</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {taxReport.categoryBreakdown.map((category) => (
-                    <TableRow key={category.category}>
-                      <TableCell component="th" scope="row" sx={{ textTransform: 'capitalize' }}>
-                        {category.category}
-                      </TableCell>
-                      <TableCell align="right">{formatCurrency(category.amount)}</TableCell>
-                      <TableCell align="right">{category.percentage.toFixed(2)}%</TableCell>
-                      <TableCell align="right">{category.transactionCount}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </TabPanel>
+          </Paper>
 
-          {/* Monthly Analysis Tab */}
-          <TabPanel value={tabValue} index={2}>
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" gutterBottom>
-                Monthly Net Amount
-              </Typography>
-              <Box sx={{ height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={taxReport.monthlyBreakdown}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend />
-                    <Bar
-                      dataKey="netAmount"
-                      name="Net Amount"
-                      fill="#8884d8"
-                    >
-                      {taxReport.monthlyBreakdown.map((entry) => (
-                        <Cell 
-                          key={`cell-${entry.month}`} 
-                          fill={entry.netAmount >= 0 ? '#00A389' : '#FF4842'} 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
+          <Paper elevation={3} sx={{ mb: 4 }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs value={tabValue} onChange={handleTabChange} aria-label="tax report tabs">
+                <Tab label="Summary" {...a11yProps(0)} />
+                <Tab label="Breakdown by Category" {...a11yProps(1)} />
+                <Tab label="Monthly Analysis" {...a11yProps(2)} />
+                <Tab label="Transactions" {...a11yProps(3)} />
+              </Tabs>
             </Box>
-            
-            <Typography variant="h6" gutterBottom>
-              Monthly Details
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Month</TableCell>
-                    <TableCell align="right">Income</TableCell>
-                    <TableCell align="right">Expenses</TableCell>
-                    <TableCell align="right">Gains</TableCell>
-                    <TableCell align="right">Losses</TableCell>
-                    <TableCell align="right">Net Amount</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {taxReport.monthlyBreakdown.map((month) => (
-                    <TableRow key={month.month}>
-                      <TableCell component="th" scope="row">
-                        {month.month}
-                      </TableCell>
-                      <TableCell align="right">{formatCurrency(month.income)}</TableCell>
-                      <TableCell align="right">{formatCurrency(month.expenses)}</TableCell>
-                      <TableCell align="right">{formatCurrency(month.gains)}</TableCell>
-                      <TableCell align="right">{formatCurrency(month.losses)}</TableCell>
-                      <TableCell 
-                        align="right"
-                        sx={{ color: month.netAmount >= 0 ? '#00A389' : '#FF4842' }}
+
+            {/* Report Actions */}
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #eee' }}>
+              <Tooltip title="Save Report">
+                <IconButton onClick={handleSaveReport} disabled={loading}>
+                  <SaveIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            {/* Summary Tab */}
+            <TabPanel value={tabValue} index={0}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Tax Summary
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary" gutterBottom>
+                        Generated on {format(new Date(taxReport.summary.generatedDate), 'PPpp')}
+                      </Typography>
+                      
+                      <Box sx={{ mt: 3 }}>
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                              Tax Year
+                            </Typography>
+                            <Typography variant="body1">
+                              {taxReport.summary.taxYear}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                              Country
+                            </Typography>
+                            <Typography variant="body1">
+                              {taxReport.summary.country}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                              Total Income
+                            </Typography>
+                            <Typography variant="body1" color="#00A389">
+                              {formatCurrency(taxReport.summary.totalIncome)}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                              Total Expenses
+                            </Typography>
+                            <Typography variant="body1" color="#FF4842">
+                              {formatCurrency(taxReport.summary.totalExpenses)}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                              Total Gains
+                            </Typography>
+                            <Typography variant="body1" color="#00A389">
+                              {formatCurrency(taxReport.summary.totalGains)}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                              Total Losses
+                            </Typography>
+                            <Typography variant="body1" color="#FF4842">
+                              {formatCurrency(taxReport.summary.totalLosses)}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              Net Taxable Amount
+                            </Typography>
+                            <Typography 
+                              variant="h5" 
+                              color={taxReport.summary.netTaxableAmount >= 0 ? '#00A389' : '#FF4842'}
+                            >
+                              {formatCurrency(taxReport.summary.netTaxableAmount)}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ height: '100%' }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Category Distribution
+                      </Typography>
+                      <Box sx={{ height: 300 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={taxReport.categoryBreakdown}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={100}
+                              fill="#8884d8"
+                              dataKey="amount"
+                              nameKey="category"
+                              label={({ category, percentage }) => `${category}: ${percentage.toFixed(0)}%`}
+                            >
+                              {taxReport.categoryBreakdown.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Breakdown by Category Tab */}
+            <TabPanel value={tabValue} index={1}>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                  Transaction Volume by Category
+                </Typography>
+                <Box sx={{ height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={taxReport.categoryBreakdown}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="category" />
+                      <YAxis />
+                      <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Legend />
+                      <Bar
+                        dataKey="amount"
+                        name="Amount"
+                        fill="#8884d8"
                       >
-                        {formatCurrency(month.netAmount)}
-                      </TableCell>
+                        {taxReport.categoryBreakdown.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
+              
+              <Typography variant="h6" gutterBottom>
+                Category Details
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Category</TableCell>
+                      <TableCell align="right">Amount</TableCell>
+                      <TableCell align="right">Percentage</TableCell>
+                      <TableCell align="right">Transaction Count</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </TabPanel>
+                  </TableHead>
+                  <TableBody>
+                    {taxReport.categoryBreakdown.map((category) => (
+                      <TableRow key={category.category}>
+                        <TableCell component="th" scope="row" sx={{ textTransform: 'capitalize' }}>
+                          {category.category}
+                        </TableCell>
+                        <TableCell align="right">{formatCurrency(category.amount)}</TableCell>
+                        <TableCell align="right">{category.percentage.toFixed(2)}%</TableCell>
+                        <TableCell align="right">{category.transactionCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </TabPanel>
 
-          {/* Transactions Tab */}
-          <TabPanel value={tabValue} index={3}>
-            <Typography variant="h6" gutterBottom>
-              Included Transactions
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell align="right">Amount</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {taxReport.transactions
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>
-                          {format(new Date(transaction.timestamp), 'MMM d, yyyy')}
+            {/* Monthly Analysis Tab */}
+            <TabPanel value={tabValue} index={2}>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                  Monthly Net Amount
+                </Typography>
+                <Box sx={{ height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={taxReport.monthlyBreakdown}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Legend />
+                      <Bar
+                        dataKey="netAmount"
+                        name="Net Amount"
+                        fill="#8884d8"
+                      >
+                        {taxReport.monthlyBreakdown.map((entry) => (
+                          <Cell 
+                            key={`cell-${entry.month}`} 
+                            fill={entry.netAmount >= 0 ? '#00A389' : '#FF4842'} 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
+              
+              <Typography variant="h6" gutterBottom>
+                Monthly Details
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Month</TableCell>
+                      <TableCell align="right">Income</TableCell>
+                      <TableCell align="right">Expenses</TableCell>
+                      <TableCell align="right">Gains</TableCell>
+                      <TableCell align="right">Losses</TableCell>
+                      <TableCell align="right">Net Amount</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {taxReport.monthlyBreakdown.map((month) => (
+                      <TableRow key={month.month}>
+                        <TableCell component="th" scope="row">
+                          {month.month}
                         </TableCell>
-                        <TableCell sx={{ textTransform: 'capitalize' }}>
-                          {transaction.type}
-                        </TableCell>
-                        <TableCell sx={{ textTransform: 'capitalize' }}>
-                          {transaction.category || 'uncategorized'}
-                        </TableCell>
-                        <TableCell>
-                          {transaction.notes || 
-                            `${transaction.type === 'send' ? 'To: ' : 'From: '}${
-                              transaction.type === 'send' 
-                                ? transaction.to.substring(0, 8) + '...' 
-                                : transaction.from.substring(0, 8) + '...'
-                            }`
-                          }
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                          {formatCurrency(transaction.value)}
+                        <TableCell align="right">{formatCurrency(month.income)}</TableCell>
+                        <TableCell align="right">{formatCurrency(month.expenses)}</TableCell>
+                        <TableCell align="right">{formatCurrency(month.gains)}</TableCell>
+                        <TableCell align="right">{formatCurrency(month.losses)}</TableCell>
+                        <TableCell 
+                          align="right"
+                          sx={{ color: month.netAmount >= 0 ? '#00A389' : '#FF4842' }}
+                        >
+                          {formatCurrency(month.netAmount)}
                         </TableCell>
                       </TableRow>
                     ))}
-                  
-                  {taxReport.transactions.length === 0 && (
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </TabPanel>
+
+            {/* Transactions Tab */}
+            <TabPanel value={tabValue} index={3}>
+              <Typography variant="h6" gutterBottom>
+                Included Transactions
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
-                        No transactions found for the selected period and wallets.
-                      </TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell align="right">Amount</TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              component="div"
-              count={taxReport.transactions.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </TabPanel>
-        </Paper>
+                  </TableHead>
+                  <TableBody>
+                    {taxReport.transactions
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell>
+                            {format(new Date(transaction.timestamp), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell sx={{ textTransform: 'capitalize' }}>
+                            {transaction.type}
+                          </TableCell>
+                          <TableCell sx={{ textTransform: 'capitalize' }}>
+                            {transaction.category || 'uncategorized'}
+                          </TableCell>
+                          <TableCell>
+                            {transaction.notes || 
+                              `${transaction.type === 'send' ? 'To: ' : 'From: '}${
+                                transaction.type === 'send' 
+                                  ? transaction.to.substring(0, 8) + '...' 
+                                  : transaction.from.substring(0, 8) + '...'
+                              }`
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                            {formatCurrency(transaction.value)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    
+                    {taxReport.transactions.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">
+                          No transactions found for the selected period and wallets.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={taxReport.transactions.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </TabPanel>
+          </Paper>
+        </>
       )}
     </div>
   );

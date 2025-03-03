@@ -8,13 +8,40 @@ const api = axios.create({
   },
 });
 
+// Add a request interceptor to include auth token
+api.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage
+    const token = localStorage.getItem('auth_token');
+    
+    // If token exists, include it in the Authorization header
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor for API calls
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     const { response } = error;
-    // You can add global error handling logic here
-    // e.g., redirect to login page if 401, show error notification, etc.
+    
+    // If response status is 401 (Unauthorized), clear the token
+    if (response && response.status === 401) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_data');
+      
+      // If we have a router, we could redirect to login here
+      // window.location.href = '/login';
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -30,7 +57,7 @@ const apiRequest = async <T>(config: AxiosRequestConfig): Promise<T> => {
       if (response) {
         console.error('API Error:', response.status, response.data);
         throw new Error(
-          response.data.message || `API Error: ${response.status}`
+          response.data.message || response.data.error || `API Error: ${response.status}`
         );
       }
       console.error('Network Error:', error.message);

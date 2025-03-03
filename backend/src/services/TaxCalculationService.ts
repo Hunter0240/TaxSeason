@@ -1,5 +1,6 @@
 import Transaction, { ITransaction } from '../models/Transaction';
 import { Types } from 'mongoose';
+import ExportService from './ExportService';
 
 // Define tax calculation methods
 export enum TaxCalculationMethod {
@@ -221,25 +222,15 @@ class TaxCalculationService {
   /**
    * Generate a CSV export of the tax report
    */
-  generateCSV(taxReport: TaxReport): string {
-    // Initialize CSV string with headers
-    let csv = 'Date Sold,Date Acquired,Asset,Amount,Sale Value (USD),Cost Basis (USD),Gain/Loss (USD),Long Term\n';
-    
-    // Sort gains by date sold
-    const sortedGains = [...taxReport.transactions.gains].sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-    );
-    
-    // Add each gain as a row in the CSV
-    sortedGains.forEach(gain => {
-      const dateSold = gain.timestamp.toISOString().split('T')[0];
-      const dateAcquired = gain.acquiredAt.toISOString().split('T')[0];
-      const isLongTerm = gain.isLongTerm ? 'Yes' : 'No';
-      
-      csv += `${dateSold},${dateAcquired},${gain.asset},${gain.soldAmount.toFixed(8)},${gain.soldValue.toFixed(2)},${gain.costBasis.toFixed(2)},${gain.gainLoss.toFixed(2)},${isLongTerm}\n`;
-    });
-    
-    return csv;
+  generateCSV(taxReport: TaxReport, templateId: string = 'general'): string {
+    return ExportService.generateCSV(taxReport, templateId);
+  }
+
+  /**
+   * Generate a PDF export of the tax report
+   */
+  async generatePDF(taxReport: TaxReport): Promise<Buffer> {
+    return ExportService.generatePDF(taxReport);
   }
 }
 

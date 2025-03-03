@@ -159,11 +159,21 @@ const getTaxReport = async (params: TaxReportParams): Promise<TaxReport> => {
 };
 
 // Download tax report as PDF
-const downloadTaxReportPdf = async (reportId: string): Promise<Blob> => {
+const downloadTaxReportPdf = async (walletId: string, params: TaxReportParams): Promise<Blob> => {
   try {
-    const response = await axios.get(`${apiBaseUrl}/tax-reports/${reportId}/pdf`, {
-      responseType: 'blob'
-    });
+    const requestData = {
+      startDate: new Date(params.year, 0, 1).toISOString(), // January 1st of the selected year
+      endDate: new Date(params.year, 11, 31).toISOString(), // December 31st of the selected year
+      method: params.costBasisMethod || 'FIFO'
+    };
+    
+    const response = await axios.post(
+      `${apiBaseUrl}/tax/wallets/${walletId}/tax-report/pdf`, 
+      requestData,
+      {
+        responseType: 'blob'
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error downloading tax report PDF:', error);
@@ -172,9 +182,10 @@ const downloadTaxReportPdf = async (reportId: string): Promise<Blob> => {
 };
 
 // Download tax report as CSV
-const downloadTaxReportCsv = async (reportId: string): Promise<Blob> => {
+const downloadTaxReportCsv = async (reportId: string, templateId: string = 'general'): Promise<Blob> => {
   try {
     const response = await axios.get(`${apiBaseUrl}/tax-reports/${reportId}/csv`, {
+      params: { templateId },
       responseType: 'blob'
     });
     return response.data;

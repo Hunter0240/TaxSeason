@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Grid, Paper, Box, CircularProgress, Alert } from '@mui/material';
+import { Typography, Grid, Paper, Box, CircularProgress, Alert, Divider } from '@mui/material';
 import dashboardService from '../services/dashboardService';
 import walletService from '../services/walletService';
 import { DashboardSummary } from '../types/api';
+import TransactionActivityChart from '../components/Dashboard/TransactionActivityChart';
+import WalletBalanceChart from '../components/Dashboard/WalletBalanceChart';
+import TransactionSummaryCard from '../components/Dashboard/TransactionSummaryCard';
+import TimeframeSelector from '../components/Dashboard/TimeframeSelector';
 
 const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -12,6 +16,7 @@ const HomePage: React.FC = () => {
     transactionCount: 0,
     totalValue: 0
   });
+  const [timeframe, setTimeframe] = useState<'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -44,6 +49,10 @@ const HomePage: React.FC = () => {
     fetchDashboardData();
   }, []);
 
+  const handleTimeframeChange = (newTimeframe: 'week' | 'month' | 'year') => {
+    setTimeframe(newTimeframe);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -54,12 +63,17 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
-      </Typography>
-      <Typography variant="subtitle1" color="textSecondary" paragraph>
-        Welcome to TaxSeason. View your blockchain tax reporting summary.
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <div>
+          <Typography variant="h4" gutterBottom>
+            Dashboard
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary">
+            Welcome to TaxSeason. View your blockchain tax reporting summary.
+          </Typography>
+        </div>
+        <TimeframeSelector value={timeframe} onChange={handleTimeframeChange} />
+      </Box>
       
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -111,20 +125,37 @@ const HomePage: React.FC = () => {
         </Grid>
       </Grid>
       
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12}>
-          <Paper elevation={3} sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Recent Activity
-            </Typography>
-            <Typography variant="body1" paragraph sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>
-              {stats.walletCount > 0 
-                ? 'Loading recent transactions...' 
-                : 'Connect a wallet to view your recent blockchain activity.'}
-            </Typography>
-          </Paper>
+      <TransactionSummaryCard timeframe={timeframe} />
+      
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12} md={6}>
+          <TransactionActivityChart timeframe={timeframe} />
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <WalletBalanceChart />
         </Grid>
       </Grid>
+      
+      <Divider sx={{ my: 4 }} />
+      
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Recent Activity
+      </Typography>
+      
+      <Paper elevation={3} sx={{ p: 3 }}>
+        {stats.walletCount > 0 ? (
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TransactionActivityChart timeframe="week" />
+            </Grid>
+          </Grid>
+        ) : (
+          <Typography variant="body1" paragraph sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>
+            Connect a wallet to view your recent blockchain activity.
+          </Typography>
+        )}
+      </Paper>
     </div>
   );
 };

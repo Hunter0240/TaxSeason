@@ -2,11 +2,13 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import cookieParser from 'cookie-parser';
 
 // Import routes
 import walletRoutes from './routes/walletRoutes';
 import transactionRoutes from './routes/transactionRoutes';
 import taxRoutes from './routes/taxRoutes';
+import authRoutes from './routes/authRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +30,7 @@ mongoose.connect(MONGO_URI)
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
@@ -35,6 +38,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api', transactionRoutes);
 app.use('/api', taxRoutes);

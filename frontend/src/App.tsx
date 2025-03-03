@@ -1,8 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import Layout from './components/Layout';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { CssBaseline } from '@mui/material';
+
+// Pages
 import HomePage from './pages/HomePage';
 import WalletsPage from './pages/WalletsPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -10,71 +10,78 @@ import TransactionDetailPage from './pages/TransactionDetailPage';
 import TaxReportPage from './pages/TaxReportPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 
-// Create a theme instance
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#90caf9',
-    },
-    secondary: {
-      main: '#f48fb1',
-    },
-    background: {
-      default: '#121212',
-      paper: '#1e1e1e',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 500,
-    },
-    h5: {
-      fontWeight: 500,
-    },
-    h6: {
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#1e1e1e',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-        },
-      },
-    },
-  },
-});
+// Components
+import Layout from './components/Layout/Layout';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
+
+// Contexts
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Layout>
+    <AuthProvider>
+      <ThemeProvider>
+        <CssBaseline />
+        <Router>
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/wallets" element={<WalletsPage />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/transactions/:transactionId" element={<TransactionDetailPage />} />
-            <Route path="/tax-report" element={<TaxReportPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            <Route element={<Layout />}>
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/wallets" element={
+                <ProtectedRoute>
+                  <WalletsPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/transactions" element={
+                <ProtectedRoute>
+                  <TransactionsPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/transactions/:transactionId" element={
+                <ProtectedRoute>
+                  <TransactionDetailPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/tax-report" element={
+                <ProtectedRoute>
+                  <TaxReportPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/404" element={<NotFoundPage />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Route>
           </Routes>
-        </Layout>
-      </Router>
-    </ThemeProvider>
+        </Router>
+      </ThemeProvider>
+    </AuthProvider>
   );
 };
 

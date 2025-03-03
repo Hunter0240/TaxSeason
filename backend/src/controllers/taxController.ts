@@ -99,4 +99,59 @@ export const generateTaxReportCSV = async (req: Request, res: Response): Promise
     console.error('Error generating tax report CSV:', error);
     res.status(500).json({ error: 'Failed to generate tax report CSV' });
   }
+};
+
+/**
+ * Generate a PDF export of a tax report
+ */
+export const generateTaxReportPDF = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { walletId } = req.params;
+    const { startDate, endDate, method = TaxCalculationMethod.FIFO } = req.body;
+    
+    // Validate wallet ID
+    if (!mongoose.Types.ObjectId.isValid(walletId)) {
+      res.status(400).json({ error: 'Invalid wallet ID format' });
+      return;
+    }
+    
+    // Validate dates
+    if (!startDate || !endDate) {
+      res.status(400).json({ error: 'Start date and end date are required' });
+      return;
+    }
+    
+    // Validate method
+    if (!Object.values(TaxCalculationMethod).includes(method as TaxCalculationMethod)) {
+      res.status(400).json({
+        error: 'Invalid tax calculation method',
+        validMethods: Object.values(TaxCalculationMethod)
+      });
+      return;
+    }
+    
+    // Generate the tax report
+    const report = await TaxCalculationService.generateTaxReport(
+      walletId,
+      new Date(startDate),
+      new Date(endDate),
+      method as TaxCalculationMethod
+    );
+    
+    // Generate PDF
+    const pdfBuffer = await TaxCalculationService.generatePDF(report);
+    
+    // Set headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition', 
+      `attachment; filename=tax_report_${walletId}_${method}_${new Date().toISOString().split('T')[0]}.pdf`
+    );
+    
+    // Send PDF
+    res.status(200).send(pdfBuffer);
+  } catch (error) {
+    console.error('Error generating tax report PDF:', error);
+    res.status(500).json({ error: 'Failed to generate tax report PDF' });
+  }
 }; 
