@@ -2,7 +2,17 @@ import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
 
 // Load JWT secret from environment variables
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-for-development';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('WARNING: JWT_SECRET environment variable is not set!');
+  console.error('This is a security risk. Please set JWT_SECRET in your environment or .env file.');
+  // Don't exit in development, but log the warning
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Running in production without JWT_SECRET is not allowed.');
+    process.exit(1);
+  }
+}
+
 const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '24h';
 
 class AuthService {

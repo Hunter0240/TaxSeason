@@ -59,8 +59,11 @@ MONGODB_URI=mongodb://localhost:27017/taxseason
 JWT_SECRET=$(openssl rand -hex 32)
 NODE_ENV=development
 DEFAULT_ADMIN_EMAIL=admin@example.com
-DEFAULT_ADMIN_PASSWORD=taxseason123
+DEFAULT_ADMIN_PASSWORD=changeme123
 EOL
+
+echo "Generated a secure JWT secret for your installation"
+echo "IMPORTANT: The default admin password is 'changeme123'. Change it immediately after first login."
 
 # Create frontend .env file
 echo "Creating frontend environment file..."
@@ -95,7 +98,7 @@ echo "1. Run 'bash scripts/start-local.sh'"
 echo "2. Open http://localhost:3000 in your browser"
 echo "3. Log in with the default credentials:"
 echo "   Email: admin@example.com"
-echo "   Password: taxseason123"
+echo "   Password: changeme123"
 echo ""
 echo "IMPORTANT: For security, please change the default password immediately after logging in."
 echo "===============================================" 

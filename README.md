@@ -45,7 +45,7 @@ We've simplified the setup process for personal use:
 
 4. Access the application at `http://localhost:3000`
    - Default login: admin@example.com
-   - Default password: taxseason123
+   - Default password: changeme123
 
 For detailed instructions, see [Personal Setup Guide](docs/PERSONAL_SETUP.md).
 

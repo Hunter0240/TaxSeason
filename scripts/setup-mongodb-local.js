@@ -11,7 +11,12 @@ require('dotenv').config({ path: path.join(__dirname, '../backend/.env') });
 
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/taxseason';
 const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com';
-const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'taxseason123';
+const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'changeme123';
+
+// Warn about using the default password from script
+if (defaultAdminPassword === 'changeme123') {
+  console.log('WARNING: Using default password. Remember to change it after logging in!');
+}
 
 async function setupDatabase() {
   console.log('Connecting to MongoDB...');

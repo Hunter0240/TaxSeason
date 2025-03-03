@@ -57,7 +57,7 @@ http://localhost:3000
 
 Log in with the default credentials:
 - Email: admin@example.com
-- Password: taxseason123
+- Password: changeme123
 
 **Important**: For security, please change the default password immediately after logging in.
 
@@ -88,8 +88,10 @@ This will create a compressed backup of your database and configuration files in
 If you want to use a cloud MongoDB instance (like MongoDB Atlas), edit the `backend/.env` file and update the `MONGODB_URI` variable:
 
 ```
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taxseason
+MONGODB_URI=mongodb+srv://<your-connection-string>/taxseason
 ```
+
+Replace `<your-connection-string>` with the connection string provided by your MongoDB service provider. Never commit your actual MongoDB credentials to version control.
 
 ### Changing the Default Port
 
